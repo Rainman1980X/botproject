@@ -62,8 +62,8 @@ const generateUrlProfile = (username) => {
 
 };
 
-const downloadMediaFromList = async (list) => {
-    const folder = "downloads/"
+const downloadMediaFromList = async (list,username) => {
+    const folder = "downloads/"+username+"/"
     try {
         if (!fs.existsSync(folder)) {
             fs.mkdirSync(folder)
@@ -170,7 +170,7 @@ const getListVideoByUsername = async (username) => {
         });
         await pagescroll(page)
         console.log(chalk.green(`[*] Total video found: ${listVideo.length}`))
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 20000));
         if (lastVideoCount === listVideo.length) {
             loop = false
         }
@@ -224,11 +224,11 @@ const getIdVideo = (url) => {
     const selection = choice.choice;
     let listVideo = [];
     let listMedia = [];
-
+    let username = "noName"
 
     if (selection === "Mass Download (Username)") {
         const usernameInput = await getInput("Enter the username with @ (e.g. @username) : ");
-        const username = usernameInput.input;
+        username = usernameInput.input;
         listVideo = await getListVideoByUsername(username);
         if (listVideo.length === 0) {
             console.log(chalk.yellow("[!] Error: No video found"));
@@ -261,13 +261,11 @@ const getIdVideo = (url) => {
         listMedia.push(data);
     }
 
-    downloadMediaFromList(listMedia)
+    downloadMediaFromList(listMedia,username)
         .then(() => {
             console.log(chalk.green("[+] Downloaded successfully"));
         })
         .catch(err => {
             console.log(chalk.red("[X] Error: " + err));
         });
-
-
 })();
