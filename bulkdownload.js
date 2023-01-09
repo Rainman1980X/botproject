@@ -86,10 +86,10 @@ async function main() {
         console.log('Now Downloading ' +nVideos+ ' Video(s)' )};
 
     //becareful that can be alot of gigas if profile has a lot of videos
-    for (var i=0;i<nVideos ;i++) //you can limit number of videos by replace url.length by number
+    for (let i=0;i<nVideos ;i++) //you can limit number of videos by replace url.length by number
     {
         function getRandomNumber() {
-            var random = Math.floor(Math.random() * (500 - 300 + 1)) + 300;
+            let random = Math.floor(Math.random() * (500 - 300 + 1)) + 300;
             return random;
         };
         await page.waitForTimeout(getRandomNumber());

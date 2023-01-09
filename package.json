@@ -22,11 +22,11 @@
     "pupeteer": "^0.0.1",
     "puppeteer": "^19.0.0",
     "puppeteer-extra": "^3.3.4",
+    "puppeteer-extra-plugin-stealth": "^2.11.1",
     "user-agents": "^1.0.1175"
   },
   "bugs": {
     "url": "https://github.com/Rainman1980X/botproject/issues"
   },
-  "homepage": "https://github.com/Rainman1980X/botproject#readme",
-  "devDependencies": {}
+  "homepage": "https://github.com/Rainman1980X/botproject#readme"
 }

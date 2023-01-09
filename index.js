@@ -1,4 +1,5 @@
 const puppeteer = require('puppeteer-extra');
+const stealthPlugin = require("puppeteer-extra-plugin-stealth")();
 const inquirer = require("inquirer");
 const chalk = require("chalk");
 const {resolve} = require("path");
@@ -6,13 +7,18 @@ const fetch = require("node-fetch");
 const fs = require("fs");
 const {Headers} = require('node-fetch');
 const UserAgent = require('user-agents');
+const https = require("https");
 
 //set a user-agent for fetch & pptr
 const headers = new Headers();
 const userAgent = new UserAgent({platform: 'Win32'}).toString();
-headers.append('User-Agent', 'TikTok 26.2.0 rv:262018 (iPhone; iOS 14.4.2; en_US) Cronet');
+headers.append('User-Agent', 'TikTok 27.6.3 rv:262018 (iPhone; iOS 14.4.2; en_US) Cronet');
 const headersWm = new Headers();
 headersWm.append('User-Agent', userAgent);
+["chrome.runtime", "navigator.languages"].forEach(a =>
+    stealthPlugin.enabledEvasions.delete(a)
+);
+puppeteer.use(stealthPlugin);
 
 const getChoice = () => new Promise((resolve, reject) => {
     inquirer.prompt([
@@ -67,18 +73,20 @@ const downloadMediaFromList = async (list) => {
     }
     list.forEach((item) => {
         const fileName = `${item.id}.mp4`
-        const downloadFile = fetch(item.url)
         const file = fs.createWriteStream(folder + fileName)
 
         console.log(chalk.green(`[+] Downloading ${fileName}`))
-
-        downloadFile.then(res => {
-            res.body.pipe(file)
+        https.get(item.url, async response => {
+            response.pipe(file)
             file.on("finish", () => {
-                file.close()
-                resolve()
+                console.log(chalk.green('[+] Download completed'))
+                file.close();
             });
-            file.on("error", (err) => reject(err));
+            file.on("error", () => {
+                console.log(chalk.red('[-] Download uncompleted'))
+                file.close();
+            });
+            resolve(folder + fileName);
         });
     });
 }
@@ -101,26 +109,26 @@ const getVideoWM = async (url) => {
 
 const getVideoNoWM = async (url) => {
     const idVideo = getIdVideo(url)
-    const API_URL = `https://api19-core-useast5.us.tiktokv.com/aweme/v1/feed/?aweme_id=${idVideo}&version_code=262&app_name=musical_ly&channel=App&device_id=null&os_version=14.4.2&device_platform=iphone&device_type=iPhone9`;
+    const API_URL = `https://api19-core-useast5.us.tiktokv.com/aweme/v1/feed/?aweme_id=${idVideo}&version_code=272&app_name=musical_ly&channel=App&device_id=null&os_version=14.4.2&device_platform=iphone&device_type=iPhone9`;
     const request = await fetch(API_URL, {
         method: "GET",
         headers: headers
     });
-    const body = await request.text();
+
     try {
+        const body = await request.text();
         let res = JSON.parse(body);
+        const urlMedia = res.aweme_list[0].video.play_addr.url_list[0]
+        console.log(chalk.yellow(`[*] find video ${idVideo}`))
+        return {
+            url: urlMedia,
+            id: idVideo
+        }
     } catch (err) {
         console.error("Error:", err);
         console.error("Response body:", body);
     }
 
-    // const res = await request.json()
-    const urlMedia = res.aweme_list[0].video.play_addr.url_list[0]
-
-    return {
-        url: urlMedia,
-        id: idVideo
-    }
 }
 
 const getListVideoByUsername = async (username) => {
@@ -154,26 +162,38 @@ const getListVideoByUsername = async (username) => {
     let listVideo = []
     console.log(chalk.green("[*] Getting list video from: " + username))
     let loop = true
-    let previousHeight;
+    let lastVideoCount = 0
     while (loop) {
         listVideo = await page.evaluate(() => {
             const listVideo = Array.from(document.querySelectorAll(".tiktok-yz6ijl-DivWrapper > a"));
             return listVideo.map(item => item.href);
         });
-        console.log(chalk.green(`[*] ${listVideo.length} video found`))
-        previousHeight = await page.evaluate("document.body.scrollHeight");
-        await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        await page.waitForFunction(`document.body.scrollHeight > ${previousHeight}`, {timeout: 20000})
-            .catch(() => {
-                console.log(chalk.red("[X] No more video found"));
-                console.log(chalk.green(`[*] Total video found: ${listVideo.length}`))
-                loop = false
-            });
-        await new Promise((resolve) => setTimeout(resolve, 20000));
+        await pagescroll(page)
+        console.log(chalk.green(`[*] Total video found: ${listVideo.length}`))
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        if (lastVideoCount === listVideo.length) {
+            loop = false
+        }
+        lastVideoCount = listVideo.length
     }
     await browser.close()
     return listVideo
 }
+const pagescroll = async (page) => {
+    await page.evaluate(() => new Promise((resolve) => {
+        let scrollTop = -1;
+        const interval = setInterval(() => {
+            window.scrollBy(0, 1000);
+            if (document.documentElement.scrollTop !== scrollTop) {
+                scrollTop = document.documentElement.scrollTop;
+                return;
+            }
+            clearInterval(interval);
+            resolve();
+        }, 100);
+    }));
+}
+
 const getRedirectUrl = async (url) => {
     if (url.includes("vm.tiktok.com") || url.includes("vt.tiktok.com")) {
         url = await fetch(url, {
@@ -190,12 +210,13 @@ const getIdVideo = (url) => {
     const matching = url.includes("/video/")
     if (!matching) {
         console.log(chalk.red("[X] Error: URL not found"));
-        exit();
+        return
     }
     const idVideo = url.substring(url.indexOf("/video/") + 7, url.length);
     return (idVideo.length > 19) ? idVideo.substring(0, idVideo.indexOf("?")) : idVideo;
 }
 
+// Mainfunction
 (async () => {
     const header = "\rBotProject by https://github.com/Rainman1980X/botproject \n"
     console.log(chalk.magenta(header))
