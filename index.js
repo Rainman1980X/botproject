@@ -12,7 +12,7 @@ const https = require("https");
 //set a user-agent for fetch & pptr
 const headers = new Headers();
 const userAgent = new UserAgent({platform: 'Win32'}).toString();
-headers.append('User-Agent', 'TikTok 27.6.3 rv:262018 (iPhone; iOS 14.4.2; en_US) Cronet');
+headers.append('User-Agent', 'TikTok 27.6.3 rv:262019 (iPhone; iOS 14.4.2; en_US) Cronet');
 const headersWm = new Headers();
 headersWm.append('User-Agent', userAgent);
 ["chrome.runtime", "navigator.languages"].forEach(a =>
@@ -62,8 +62,8 @@ const generateUrlProfile = (username) => {
 
 };
 
-const downloadMediaFromList = async (list,username) => {
-    const folder = "downloads/"+username+"/"
+const downloadMediaFromList = async (list, username) => {
+    const folder = "downloads/" + username + "/"
     try {
         if (!fs.existsSync(folder)) {
             fs.mkdirSync(folder)
@@ -71,24 +71,30 @@ const downloadMediaFromList = async (list,username) => {
     } catch (err) {
         console.error(err)
     }
-    list.forEach((item) => {
+    for (const item of list) {
         const fileName = `${item.id}.mp4`
         const file = fs.createWriteStream(folder + fileName)
-
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         console.log(chalk.green(`[+] Downloading ${fileName}`))
+
         https.get(item.url, async response => {
-            response.pipe(file)
-            file.on("finish", () => {
-                console.log(chalk.green('[+] Download completed'))
-                file.close();
-            });
-            file.on("error", () => {
+            try {
+                response.pipe(file)
+                file.on("finish", () => {
+                    console.log(chalk.green('[+] Download completed'))
+                });
+                file.on("error", () => {
+                    console.log(chalk.red('[-] Download uncompleted'))
+                });
+            } catch (e) {
+                console.error(chalk.red(e))
                 console.log(chalk.red('[-] Download uncompleted'))
+            } finally {
                 file.close();
-            });
-            resolve(folder + fileName);
+                resolve(folder + fileName);
+            }
         });
-    });
+    }
 }
 
 
@@ -170,7 +176,7 @@ const getListVideoByUsername = async (username) => {
         });
         await pagescroll(page)
         console.log(chalk.green(`[*] Total video found: ${listVideo.length}`))
-        await new Promise((resolve) => setTimeout(resolve, 20000));
+        await new Promise((resolve) => setTimeout(resolve, 10000));
         if (lastVideoCount === listVideo.length) {
             loop = false
         }
@@ -261,7 +267,7 @@ const getIdVideo = (url) => {
         listMedia.push(data);
     }
 
-    downloadMediaFromList(listMedia,username)
+    downloadMediaFromList(listMedia, username)
         .then(() => {
             console.log(chalk.green("[+] Downloaded successfully"));
         })
