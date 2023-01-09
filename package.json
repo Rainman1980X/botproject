@@ -1,22 +1,20 @@
 {
-  "name": "tiktokdl",
+  "name": "botproject",
   "version": "1.0.0",
   "description": "download tiktoks with multiple options",
   "main": "index.js",
   "scripts": {
-    "tiktokdl": "node index.js"
+    "botproject": "node index.js"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/karim0sec/tiktokdl"
+    "url": "git+https://github.com/Rainman1980X/botproject.git"
   },
   "keywords": [
-    "tiktok-downloader",
-    "tiktok-nowatermark",
-    "bulk-tiktok"
+    "tiktok-bot"
   ],
-  "author": "Karim Elsayed",
-  "license": "ISC",
+  "author": "Rainman",
+  "license": "Apache License 2.0",
   "dependencies": {
     "chalk": "^2.4.2",
     "inquirer": "^8.2.4",
@@ -25,5 +23,10 @@
     "puppeteer": "^19.0.0",
     "puppeteer-extra": "^3.3.4",
     "user-agents": "^1.0.1175"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/Rainman1980X/botproject/issues"
+  },
+  "homepage": "https://github.com/Rainman1980X/botproject#readme",
+  "devDependencies": {}
 }
